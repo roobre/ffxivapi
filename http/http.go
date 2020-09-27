@@ -19,6 +19,7 @@ func NewHTTPApi() *HTTPApi {
 		xivapi: ffxivapi.New(),
 	}
 
+	h.HandleFunc("/", usage)
 	h.HandleFunc("/search", h.search)
 	h.HandleFunc("/character/{id}", h.character)
 
@@ -73,4 +74,22 @@ func (h *HTTPApi) character(rw http.ResponseWriter, r *http.Request) {
 
 	je := json.NewEncoder(rw)
 	je.Encode(results)
+}
+
+func usage(rw http.ResponseWriter, r *http.Request) {
+	rw.Write([]byte(
+		`# API Usage:
+
+## Search
+  /search?name={name}&world={world}
+Example:
+  /search?name=Roobre+Shiram&world=Ragnarok
+
+## Character details
+  /character/{id}/[?achievements=y]
+Examples:
+  /character/31688528
+  /character/31688528?achievement=y
+`,
+	))
 }
