@@ -142,27 +142,36 @@ func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 	lp := silentAtoi(lastPageUrl[len(lastPageUrl)-1:])
 
 	achvChan := make(chan []Achievement, 8)
+	errChan := make(chan error, 8)
 
 	// Parse first page asynchronously
-	go parseAchievementPage(doc, achvChan)
+	go func() {
+		achvChan <- parseAchievementPage(doc)
+	}()
 
 	// For next pages, if any, parse asyncrhonously as well
-	for i := 2; i <= lp; i++ {
-		page := i
+	for p := 2; p <= lp; p++ {
+		page := p
 		go func() {
 			doc, err := api.lodestone(fmt.Sprintf("/lodestone/character/%d/achievement", c.ID), map[string]string{
 				"page": fmt.Sprint(page),
 			})
 			if err != nil {
-				log.Println(err)
+				errChan <- err
+				return
 			}
-			parseAchievementPage(doc, achvChan)
+			achvChan <- parseAchievementPage(doc)
 		}()
 	}
 
 	// Collect updates from each page and append them to the character's achievement list
-	for i := 1; i <= lp; i++ {
-		c.Achievements = append(c.Achievements, <-achvChan...)
+	for p := 1; p <= lp; p++ {
+		select {
+		case advs := <-achvChan:
+			c.Achievements = append(c.Achievements, advs...)
+		case err := <-errChan:
+			log.Println(err)
+		}
 	}
 
 	return nil
@@ -175,7 +184,7 @@ var achNameRegex = regexp.MustCompile(`achievement "(.+)" earned`)
 var achDatetimeRegex = regexp.MustCompile(`ldst_strftime\((\d+), 'YMD'\)`)
 
 // parseAchievementPage pushes to a channel the list of achievements found in a goquery.Document
-func parseAchievementPage(doc *goquery.Document, achvChan chan []Achievement) {
+func parseAchievementPage(doc *goquery.Document) []Achievement {
 	// Preallocate list for 50 achievements (50 per page)
 	achievements := make([]Achievement, 0, 50)
 	doc.Find(".entry__achievement").Each(func(i int, sel *goquery.Selection) {
@@ -215,7 +224,7 @@ func parseAchievementPage(doc *goquery.Document, achvChan chan []Achievement) {
 		achievements = append(achievements, a)
 	})
 
-	achvChan <- achievements
+	return achievements
 }
 
 // classImgMap holds the class name for each class icon used in the Lodestone
