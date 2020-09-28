@@ -18,7 +18,7 @@ type SearchResult struct {
 func (api *FFXIVAPI) Search(characterName string, world string) ([]SearchResult, error) {
 	doc, err := api.lodestone("/lodestone/character/",
 		URLParam{"q", characterName},
-		URLParam{"worldname", world},
+		URLParam{"worldname", strings.Title(strings.ToLower(world))},
 	)
 	if err != nil {
 		return nil, err
