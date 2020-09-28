@@ -1,6 +1,7 @@
 package ffxivapi
 
 import (
+	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
@@ -123,7 +124,11 @@ func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 		return err
 	}
 
-	lastPageUrl := doc.Find(".btn__pager__next--all").First().AttrOr("href", "")
+	lastPageUrl, public := doc.Find(".btn__pager__next--all").First().Attr("href")
+	if !public {
+		return errors.New(fmt.Sprintf("could not find achievements for %d", c.ID))
+	}
+
 	lp := silentAtoi(lastPageUrl[len(lastPageUrl)-1:])
 
 	achvChan := make(chan []Achievement, 8)
