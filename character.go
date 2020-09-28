@@ -41,8 +41,8 @@ type Character struct {
 		Name string
 	}
 
-	Achievements []Achievement
 	ClassJobs    []ClassJob
+	Achievements []Achievement
 }
 
 // ClassJob stores the progress of a character in a given class or job
