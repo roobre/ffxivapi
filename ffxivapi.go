@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -53,19 +54,25 @@ func (api *FFXIVAPI) lodestone(query string, params map[string]string) (*goquery
 	request.Header.Add("DNT", "1")
 
 	var response *http.Response
-	for try := 0; try < 10; try++ {
+	try := 1
+	for {
 		response, err = api.HTTPClient.Do(request)
-		if err != nil {
+		if err != nil { // Request failed hard, return error
 			return nil, err
 		}
 
-		if response.StatusCode == http.StatusTooManyRequests {
-			// Linear backoff
-			retry := time.Duration(try+1) * time.Second
-			log.Printf("Lodestone query failed, retrying in %ds", retry.Seconds())
+		// If TooManyRequests and retries left, sleep then continue
+		if try <= 10 && response.StatusCode == http.StatusTooManyRequests {
+			// Linear backoff, wait between n and n+3 seconds where n is the attempt number
+			retry := time.Duration(try+rand.Intn(try+3)) * time.Second
+			log.Printf("Lodestone ratelimit hit, retrying in %fs", retry.Seconds())
 			time.Sleep(retry)
+			try++
 			continue
-		} else if response.StatusCode != http.StatusOK {
+		}
+
+		// Out of retires or other non-ok stetus, return error
+		if response.StatusCode != http.StatusOK {
 			return nil, LodestoneHTTPError(response.StatusCode)
 		}
 
