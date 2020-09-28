@@ -23,6 +23,7 @@ func NewHTTPApi() *HTTPApi {
 	h.Handle("/", http.RedirectHandler("/doc/", http.StatusMovedPermanently))
 	h.HandleFunc("/character/search", h.search)
 	h.HandleFunc("/character/{id}", h.character)
+	h.HandleFunc("/character/{id}/avatar", h.characterAvatar)
 
 	h.Handle("/swagger.yaml", http.FileServer(http.Dir("http")))
 	h.PathPrefix("/doc").Handler(httpSwagger.Handler(httpSwagger.URL("/swagger.yaml")))
@@ -71,7 +72,7 @@ func (h *HTTPApi) character(rw http.ResponseWriter, r *http.Request) {
 		features |= ffxivapi.FeatureClassJob
 	}
 
-	results, err := h.xivapi.Character(id, features)
+	character, err := h.xivapi.Character(id, features)
 	if err != nil {
 		rw.WriteHeader(http.StatusBadGateway)
 		rw.Write([]byte(err.Error()))
@@ -81,5 +82,23 @@ func (h *HTTPApi) character(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Add("content-type", "application/json")
 
 	je := json.NewEncoder(rw)
-	je.Encode(results)
+	je.Encode(character)
+}
+
+func (h *HTTPApi) characterAvatar(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	character, err := h.xivapi.Character(id, 0)
+	if err != nil {
+		rw.WriteHeader(http.StatusBadGateway)
+		rw.Write([]byte(err.Error()))
+		return
+	}
+
+	http.Redirect(rw, r, character.Avatar, http.StatusFound)
 }
