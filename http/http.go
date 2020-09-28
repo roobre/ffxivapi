@@ -20,7 +20,7 @@ func NewHTTPApi() *HTTPApi {
 	}
 
 	h.HandleFunc("/", usage)
-	h.HandleFunc("/search", h.search)
+	h.HandleFunc("/character/search", h.search)
 	h.HandleFunc("/character/{id}", h.character)
 
 	return h
