@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/swaggo/http-swagger"
 	"net/http"
 	"roob.re/ffxivapi"
 	"strconv"
@@ -19,9 +20,12 @@ func NewHTTPApi() *HTTPApi {
 		xivapi: ffxivapi.New(),
 	}
 
-	h.HandleFunc("/", usage)
+	h.Handle("/", http.RedirectHandler("/doc/", http.StatusMovedPermanently))
 	h.HandleFunc("/character/search", h.search)
 	h.HandleFunc("/character/{id}", h.character)
+
+	h.Handle("/swagger.yaml", http.FileServer(http.Dir("http")))
+	h.PathPrefix("/doc").Handler(httpSwagger.Handler(httpSwagger.URL("/swagger.yaml")))
 
 	return h
 }
@@ -74,22 +78,4 @@ func (h *HTTPApi) character(rw http.ResponseWriter, r *http.Request) {
 
 	je := json.NewEncoder(rw)
 	je.Encode(results)
-}
-
-func usage(rw http.ResponseWriter, r *http.Request) {
-	rw.Write([]byte(
-		`# API Usage:
-
-## Search
-  /search?name={name}&world={world}
-Example:
-  /search?name=Roobre+Shiram&world=Ragnarok
-
-## Character details
-  /character/{id}/[?achievements=y]
-Examples:
-  /character/31688528
-  /character/31688528?achievement=y
-`,
-	))
 }

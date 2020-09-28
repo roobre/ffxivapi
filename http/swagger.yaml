@@ -1,0 +1,169 @@
+swagger: "2.0"
+info:
+  description: "Simple, fast and feature-incomplete REST API for FFXIV"
+  version: "0.1"
+  title: "FFXIV API"
+  contact:
+    email: "roobre@roobre.es"
+  license:
+    name: "AGPLv3"
+    url: "http://www.gnu.org/licenses/agpl-3.0.html"
+host: "localhost"
+basePath: "/"
+tags:
+- name: "character"
+  description: "Returns FFXIV character data"
+schemes:
+- "https"
+- "http"
+paths:
+  /character/search:
+    get:
+      tags:
+      - "character"
+      summary: "Search for characters given name and world"
+      description: ""
+      operationId: "characterSearch"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "query"
+        name: "name"
+        type: "string"
+        description: "Character name to look for"
+        required: true
+      - in: "query"
+        name: "world"
+        type: "string"
+        description: "World in which to search for character"
+        required: true
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/CharacterSearchResult"
+        "400":
+          description: "Missing name or world parameters"
+  /character/{id}:
+    get:
+      tags:
+      - "character"
+      summary: "Get character data"
+      description: ""
+      operationId: "getCharacter"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "path"
+        name: "id"
+        type: "integer"
+        description: "ID of the character to look for. Can be obtained from /character/search"
+        required: true
+      - in: "query"
+        name: "achievements"
+        type: "boolean"
+        description: "Whether to also retrieve achievements for character. The request will take longer."
+        required: false
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Character"
+        "404":
+          description: "Character ID is not found"
+definitions:
+  CharacterSearchResult:
+    type: "object"
+    properties:
+      ID:
+        type: "integer"
+        format: "int64"
+      Level:
+        type: "integer"
+        format: "int64"
+      Avatar:
+        type: "string"
+        format: "url"
+      Lang:
+        type: "string"
+      Name:
+        type: "string"
+      World:
+        type: "string"    
+  Character:
+    type: "object"
+    properties:
+      ParsedAt:
+        type: "string"
+        format: "date-time"
+      World:
+        type: "string"    
+      ID:
+        type: "integer"
+        format: "int64"
+      Avatar:
+        type: "string"
+        format: "url"
+      Portrait:
+        type: "string"
+        format: "url"
+      Name:
+        type: "string"
+      Nameday:
+        type: "string"
+      City:
+        type: "string"
+      GC:
+        $ref: "#/definitions/GC"
+      FC:
+        $ref: "#/definitions/FC"
+      Achievements:
+        type: "array"
+        items:
+          $ref: "#/definitions/Achievement"
+      ClassJobs:
+        type: "array"
+        items:
+          $ref: "#/definitions/ClassJob"
+
+  GC:
+    type: "object"
+    properties:
+      Name:
+        type: "string"
+      Rank:
+        type: "string"
+
+  FC:
+    type: "object"
+    properties:
+      ID:
+        type: "string"
+        format: "int64"
+      Name:
+        type: "string"
+
+  Achievement:
+    type: "object"
+    properties:
+      ID:
+        type: "integer"
+      Name:
+        type: "string"
+      ObtainedAt:
+        type: "string"
+        format: "date-time"
+
+  ClassJob:
+    type: "object"
+    properties:
+      Name:
+        type: "string"
+      Level:
+        type: "integer"
+
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"
