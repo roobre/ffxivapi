@@ -9,11 +9,13 @@ import (
 	"strconv"
 )
 
+// FFXIVAPI is the main object, containing the region to be targeted and the HTTP client to use
 type FFXIVAPI struct {
 	Region     string
 	HTTPClient *http.Client
 }
 
+// New returns a new FFXIVAPI object with http.DefaultClient and the region set to Europe ("eu")
 func New() *FFXIVAPI {
 	return &FFXIVAPI{
 		Region:     "eu",
@@ -21,19 +23,15 @@ func New() *FFXIVAPI {
 	}
 }
 
-type URLParam struct {
-	K string
-	V string
-}
-
-func (api *FFXIVAPI) lodestone(query string, params ...URLParam) (*goquery.Document, error) {
+// lodestone queries the given lodestone URL and params (url-encoding them) and returns a goquery document
+func (api *FFXIVAPI) lodestone(query string, params map[string]string) (*goquery.Document, error) {
 	u := api.url(query)
 
 	if len(params) > 0 {
 		u += "?"
 		urlValues := url.Values{}
-		for _, v := range params {
-			urlValues.Add(v.K, v.V)
+		for k, v := range params {
+			urlValues.Add(k, v)
 		}
 		u += urlValues.Encode()
 	}
@@ -44,7 +42,6 @@ func (api *FFXIVAPI) lodestone(query string, params ...URLParam) (*goquery.Docum
 	}
 
 	request.Header.Add("accept-language", "en-US,en;q=0.5")
-	//request.Header.Add("accept-encoding", "gzip, deflate, br")
 	request.Header.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:77.0) Gecko/20100101 Firefox/81.0")
 	request.Header.Add("DNT", "1")
 

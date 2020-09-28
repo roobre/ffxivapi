@@ -6,6 +6,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ const (
 	FeatureAchievements = 1 << 2
 )
 
+// Character models FFXIV character data
 type Character struct {
 	ParsedAt time.Time
 
@@ -43,6 +45,7 @@ type Character struct {
 	ClassJobs    []ClassJob
 }
 
+// ClassJob stores the progress of a character in a given class or job
 type ClassJob struct {
 	Name  string
 	Level int
@@ -51,16 +54,20 @@ type ClassJob struct {
 	ExpNext int64
 }
 
+// Achievement contains name, ID and unlocking time for a achievements
 type Achievement struct {
 	ID       int
 	Name     string
 	Obtained time.Time
 }
 
+// urlIdRegex is used to extract IDs from lodestone urls, such as 31688528 in https://eu.finalfantasyxiv.com/lodestone/character/31688528/
 var urlIdRegex = regexp.MustCompile(`/(\d+)/?$`)
 
+// Character returns character data given its ID
+// Achievements and non-active classes and jobs will be returned if features bitmask contains the respective bits
 func (api *FFXIVAPI) Character(id int, features uint) (*Character, error) {
-	doc, err := api.lodestone(fmt.Sprintf("/lodestone/character/%d/", id))
+	doc, err := api.lodestone(fmt.Sprintf("/lodestone/character/%d/", id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +76,7 @@ func (api *FFXIVAPI) Character(id int, features uint) (*Character, error) {
 
 	character := &Character{ID: id, ParsedAt: time.Now()}
 
+	// Features (achievements and secondary classes and jobs) are queried in parallel
 	if features&FeatureClassJob != 0 {
 		wg.Add(1)
 		go api.parseClassJob(character, wg)
@@ -119,11 +127,13 @@ func (api *FFXIVAPI) parseClassJob(c *Character, wg *sync.WaitGroup) error {
 func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
-	doc, err := api.lodestone(fmt.Sprintf("/lodestone/character/%d/achievement/", c.ID))
+	// Query first page of achievements
+	doc, err := api.lodestone(fmt.Sprintf("/lodestone/character/%d/achievement/", c.ID), nil)
 	if err != nil {
 		return err
 	}
 
+	// Find index of last page
 	lastPageUrl, public := doc.Find(".btn__pager__next--all").First().Attr("href")
 	if !public {
 		return errors.New(fmt.Sprintf("could not find achievements for %d", c.ID))
@@ -133,12 +143,16 @@ func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 
 	achvChan := make(chan []Achievement, 8)
 
+	// Parse first page asynchronously
 	go parseAchievementPage(doc, achvChan)
 
+	// For next pages, if any, parse asyncrhonously as well
 	for i := 2; i <= lp; i++ {
 		page := i
 		go func() {
-			doc, err := api.lodestone(fmt.Sprintf("/lodestone/character/%d/achievement/?page=%d", c.ID, page))
+			doc, err := api.lodestone(fmt.Sprintf("/lodestone/character/%d/achievement", c.ID), map[string]string{
+				"page": fmt.Sprint(page),
+			})
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -146,6 +160,7 @@ func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 		}()
 	}
 
+	// Collect updates from each page and append them to the character's achievement list
 	for i := 1; i <= lp; i++ {
 		c.Achievements = append(c.Achievements, <-achvChan...)
 	}
@@ -153,12 +168,18 @@ func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 	return nil
 }
 
+// achNameRegex obtains the achievement name from the flavour text
 var achNameRegex = regexp.MustCompile(`achievement "(.+)" earned`)
+
+// achDatetimeRegex obtains the unix timestamp from the js code used by the lodestone to display dates
 var achDatetimeRegex = regexp.MustCompile(`ldst_strftime\((\d+), 'YMD'\)`)
 
+// parseAchievementPage pushes to a channel the list of achievements found in a goquery.Document
 func parseAchievementPage(doc *goquery.Document, achvChan chan []Achievement) {
+	// Preallocate list for 50 achievements (50 per page)
 	achievements := make([]Achievement, 0, 50)
 	doc.Find(".entry__achievement").Each(func(i int, sel *goquery.Selection) {
+		// Find the achievement details link and extract ID from it
 		aurl, found := sel.Attr("href")
 		if !found {
 			return
@@ -168,15 +189,22 @@ func parseAchievementPage(doc *goquery.Document, achvChan chan []Achievement) {
 		if len(matches) <= 1 {
 			return
 		}
-		id := silentAtoi(matches[1])
+
+		id, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return
+		}
 
 		a := Achievement{ID: id}
+
+		// Obtain name from flavour text
 		name := sel.Find(".entry__activity__txt").Text()
 		matches = achNameRegex.FindStringSubmatch(name)
 		if len(matches) >= 2 {
 			a.Name = matches[1]
 		}
 
+		// Decode unlock time from js snippet
 		datescript := sel.Find("script").First().Text()
 		matches = achDatetimeRegex.FindStringSubmatch(datescript)
 		if len(matches) >= 2 {
@@ -190,6 +218,8 @@ func parseAchievementPage(doc *goquery.Document, achvChan chan []Achievement) {
 	achvChan <- achievements
 }
 
+// classImgMap holds the class name for each class icon used in the Lodestone
+// This is hacky and might stop working at any moment, but I have not found any better way to obtain it
 var classImgMap = map[string]string{
 	"https://img.finalfantasyxiv.com/lds/h/U/F5JzG9RPIKFSogtaKNBk455aYA.png": "Gladiator",
 	"https://img.finalfantasyxiv.com/lds/h/E/d0Tx-vhnsMYfYpGe9MvslemEfg.png": "Paladin",
