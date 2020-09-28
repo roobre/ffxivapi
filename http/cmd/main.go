@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	ffxivapihttp "roob.re/ffxivapi/http"
 )
 
 func main() {
@@ -15,8 +16,7 @@ func main() {
 		addr = ":" + port
 	}
 
-	h := NewHTTPApi()
+	h := ffxivapihttp.NewHTTPApi()
 	log.Println("Listening on " + addr)
 	log.Fatal(http.ListenAndServe(addr, h))
 }
-
