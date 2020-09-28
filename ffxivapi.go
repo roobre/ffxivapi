@@ -3,9 +3,11 @@ package ffxivapi
 import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 // FFXIVAPI is the main object, containing the region to be targeted and the HTTP client to use
@@ -50,13 +52,24 @@ func (api *FFXIVAPI) lodestone(query string, params map[string]string) (*goquery
 	request.Header.Add("user-agent", "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:77.0) Gecko/20100101 Firefox/81.0")
 	request.Header.Add("DNT", "1")
 
-	response, err := api.HTTPClient.Do(request)
-	if err != nil {
-		return nil, err
-	}
+	var response *http.Response
+	for try := 0; try < 10; try++ {
+		response, err = api.HTTPClient.Do(request)
+		if err != nil {
+			return nil, err
+		}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, LodestoneHTTPError(response.StatusCode)
+		if response.StatusCode == http.StatusTooManyRequests {
+			// Linear backoff
+			retry := time.Duration(try+1) * time.Second
+			log.Printf("Lodestone query failed, retrying in %ds", retry.Seconds())
+			time.Sleep(retry)
+			continue
+		} else if response.StatusCode != http.StatusOK {
+			return nil, LodestoneHTTPError(response.StatusCode)
+		}
+
+		break
 	}
 
 	return goquery.NewDocumentFromReader(response.Body)
