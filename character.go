@@ -154,7 +154,7 @@ func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 				"page": fmt.Sprint(page),
 			})
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 			parseAchievementPage(doc, achvChan)
 		}()
