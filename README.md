@@ -39,8 +39,8 @@ Currently supported endpoints are:
       "ID": 1209,
       "Name": "Mapping the Realm: Sohm Al",
       "Obtained": "2020-09-27T22:16:53Z"
-    }
-    // ...
+    },
+    "// Truncated for readability",
   ],
   "ClassJobs": [
     {

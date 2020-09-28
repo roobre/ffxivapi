@@ -8,7 +8,7 @@ info:
   license:
     name: "AGPLv3"
     url: "http://www.gnu.org/licenses/agpl-3.0.html"
-host: "localhost"
+host: "ffxivapi.herokuapp.com"
 basePath: "/"
 tags:
 - name: "character"
