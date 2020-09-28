@@ -24,7 +24,7 @@ func (api *FFXIVAPI) Search(characterName string, world string) ([]SearchResult,
 		return nil, err
 	}
 
-	var results []SearchResult
+	results := make([]SearchResult, 0, 1)
 
 	doc.Find("a.entry__link").Each(func(i int, sel *goquery.Selection) {
 		result := SearchResult{}

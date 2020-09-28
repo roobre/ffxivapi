@@ -45,6 +45,10 @@ func (h *HTTPApi) search(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(results) == 0 {
+		rw.WriteHeader(http.StatusNotFound)
+	}
+
 	rw.Header().Add("content-type", "application/json")
 
 	je := json.NewEncoder(rw)
