@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gorilla/mux"
 	"github.com/swaggo/http-swagger"
 	"net/http"
@@ -73,7 +74,11 @@ func (h *HTTPApi) character(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	character, err := h.xivapi.Character(id, features)
-	if err != nil {
+	var herr ffxivapi.LodestoneHTTPError
+	if errors.As(err, &herr) && herr == http.StatusNotFound {
+		rw.WriteHeader(http.StatusNotFound)
+		return
+	} else if err != nil {
 		rw.WriteHeader(http.StatusBadGateway)
 		rw.Write([]byte(err.Error()))
 		return
@@ -94,7 +99,11 @@ func (h *HTTPApi) characterAvatar(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	character, err := h.xivapi.Character(id, 0)
-	if err != nil {
+	var herr ffxivapi.LodestoneHTTPError
+	if errors.As(err, &herr) && herr == http.StatusNotFound {
+		rw.WriteHeader(http.StatusNotFound)
+		return
+	} else if err != nil {
 		rw.WriteHeader(http.StatusBadGateway)
 		rw.Write([]byte(err.Error()))
 		return

@@ -1,7 +1,6 @@
 package ffxivapi
 
 import (
-	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
@@ -13,6 +12,12 @@ import (
 type FFXIVAPI struct {
 	Region     string
 	HTTPClient *http.Client
+}
+
+type LodestoneHTTPError int
+
+func (lhe LodestoneHTTPError) Error() string {
+	return fmt.Sprintf("lodestone returned status code %d", lhe)
 }
 
 // New returns a new FFXIVAPI object with http.DefaultClient and the region set to Europe ("eu")
@@ -51,7 +56,7 @@ func (api *FFXIVAPI) lodestone(query string, params map[string]string) (*goquery
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("lodestone request failed with status code %d", response.StatusCode))
+		return nil, LodestoneHTTPError(response.StatusCode)
 	}
 
 	return goquery.NewDocumentFromReader(response.Body)
