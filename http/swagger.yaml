@@ -72,7 +72,27 @@ paths:
           schema:
             $ref: "#/definitions/Character"
         "404":
-          description: "Character ID is not found"
+          description: "Character ID was not found"
+  /character/{id}/avatar:
+    get:
+      tags:
+        - "character"
+      summary: "Get character avatar"
+      description: ""
+      operationId: "getCharacterAvatar"
+      produces:
+        - "text/html"
+      parameters:
+        - in: "path"
+          name: "id"
+          type: "integer"
+          description: "ID of the character to look for. Can be obtained from /character/search"
+          required: true
+      responses:
+        "302":
+          description: "Redirect to the image URL in SquareEnix' servers"
+        "404":
+          description: "Character ID was not found"
 definitions:
   CharacterSearchResult:
     type: "object"
