@@ -1,8 +1,14 @@
 # ![](https://na.finalfantasyxiv.com/favicon.ico) FFXIVAPI
 
-FFXIVAPI is a service which exposes a REST API on top of the information provided by the [Lodestone](https://eu.finalfantasyxiv.com/lodestone), by parsing the HTML output and converting it into JSON models.
+FFXIVAPI is a simple, fast and feature-incomplete REST API for FFXIV service which works on top of the information provided by the [Lodestone](https://eu.finalfantasyxiv.com/lodestone), by parsing the HTML output and converting it into JSON models.
 
-API documentation is made available through the API itself.
+FFXIVAPI is aggresive and heavily parallelizes requests to the Lodestone when possible, to minimize the already big latency the aforementioned service has. Typically, it can retrieve character data and the full list of achievements in about 5 seconds:
+
+```
+curl localhost:8080/character/31688528\?achievements\=yes  0.03s user 0.00s system 0% cpu 4.998 total
+```
+
+API documentation is available as a [Swagger spec](https://github.com/roobre/ffxivapi/blob/master/http/swagger.yaml) and is made available through the API itself in the root (`/`) path (assuming the binary is executed in the root source directory.
 
 ## Features
 
@@ -10,6 +16,7 @@ Currently supported endpoints are:
 
 * [x] `/character/search`: Search for characters given their name and world
 * [x] `/character/{id}`: Retrieve character data, including achievements
+* [x] `/character/{id}/avatar`: Hotlink character avatar given its ID
 
 ```json
 {
