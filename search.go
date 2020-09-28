@@ -12,7 +12,7 @@ type SearchResult struct {
 	Avatar string
 	Lang   string
 	Name   string
-	Server string
+	World  string
 }
 
 func (api *FFXIVAPI) Search(characterName string, world string) ([]SearchResult, error) {
@@ -49,7 +49,7 @@ func (api *FFXIVAPI) Search(characterName string, world string) ([]SearchResult,
 		result.Avatar = imagesrc
 
 		result.Name = sel.Find("p.entry__name").First().Text()
-		result.Server = sel.Find("p.entry__world").First().Text()
+		result.World = sel.Find("p.entry__world").First().Text()
 		result.Lang = sel.Find(".entry__chara__lang").First().Text()
 
 		levelText := sel.Find(".entry__chara_info").First().Find("span").First().Text()
