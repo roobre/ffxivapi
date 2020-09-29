@@ -64,7 +64,7 @@ func (api *FFXIVAPI) lodestone(query string, params map[string]string) (*goquery
 		// If TooManyRequests and retries left, sleep then continue
 		if try <= 10 && response.StatusCode == http.StatusTooManyRequests {
 			// Linear backoff, wait between n and n+3 seconds where n is the attempt number
-			retry := time.Duration(try+rand.Intn(try+3)) * time.Second
+			retry := time.Duration(1+rand.Intn(try+2)) * time.Second
 			log.Printf("Lodestone ratelimit hit, retrying in %fs", retry.Seconds())
 			time.Sleep(retry)
 			try++
