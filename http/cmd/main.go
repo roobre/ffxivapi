@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	ffxivapihttp "roob.re/ffxivapi/http"
+	"syscall"
 )
 
 func main() {
@@ -17,6 +20,27 @@ func main() {
 	}
 
 	h := ffxivapihttp.NewHTTPApi()
-	log.Println("Listening on " + addr)
-	log.Fatal(http.ListenAndServe(addr, h))
+	s := &http.Server{
+		Addr:    addr,
+		Handler: h,
+	}
+
+	go func() {
+		log.Println("Listening in " + addr + "...")
+		err := s.ListenAndServe()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
+	sigChan := make(chan os.Signal)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	signal := <-sigChan
+	log.Printf("Caught %s, shutting down...", signal.String())
+
+	err := s.Shutdown(context.Background())
+	if err != nil {
+		log.Println(err)
+	}
 }
