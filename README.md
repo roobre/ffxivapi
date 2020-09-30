@@ -1,4 +1,4 @@
-# ![](https://na.finalfantasyxiv.com/favicon.ico) FFXIVAPI
+# ![](https://na.finalfantasyxiv.com/favicon.ico) FFXIVAPI [![Maintainability](https://api.codeclimate.com/v1/badges/167cc30b58f5a04acca7/maintainability)](https://codeclimate.com/github/roobre/ffxivapi/maintainability)
 
 FFXIVAPI is a simple, fast and feature-incomplete REST API for FFXIV service which works on top of the information provided by the [Lodestone](https://eu.finalfantasyxiv.com/lodestone), by parsing the HTML output and converting it into JSON models.
 

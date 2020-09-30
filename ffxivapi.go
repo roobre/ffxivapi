@@ -1,4 +1,4 @@
-package ffxivapi
+package ffxivapi // import "roob.re/ffxivapi"
 
 import (
 	"github.com/PuerkitoBio/goquery"
