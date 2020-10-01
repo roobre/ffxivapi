@@ -39,8 +39,8 @@ func (lc *LockingCache) Cache(hf http.HandlerFunc, age time.Duration) http.Handl
 		if found {
 			if time.Since(entry.Created) < age {
 				// Entry found and valid, lock the entry, release search
-				entry.RLock()
 				lc.mu.Unlock()
+				entry.RLock()
 				defer entry.RUnlock()
 
 				log.Printf("Serving %s from cache", lc.key(r))
