@@ -2,6 +2,7 @@ package lockingcache
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -62,6 +63,8 @@ func (lc *LockingCache) Cache(hf http.HandlerFunc, age time.Duration) http.Handl
 
 		entry.Created = time.Now()
 		entry.Record()
+
+		entry.Header().Add("cache-control", fmt.Sprintf("max-age=%d", int(age.Seconds())))
 		hf(entry, r)
 
 		err := entry.Echo(rw)
@@ -77,11 +80,11 @@ func (lc *LockingCache) key(r *http.Request) string {
 
 func (lc *LockingCache) add(r *http.Request, entry *LockingEntry) {
 	if lc.MaxEntries != 0 && len(lc.cache) >= lc.MaxEntries {
-		time := time.Now()
+		t := time.Now()
 		oldest := ""
 		for k, v := range lc.cache {
-			if v.Created.Before(time) {
-				time = v.Created
+			if v.Created.Before(t) {
+				t = v.Created
 				oldest = k
 			}
 		}
