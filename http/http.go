@@ -7,24 +7,30 @@ import (
 	"github.com/swaggo/http-swagger"
 	"net/http"
 	"roob.re/ffxivapi"
+	"roob.re/ffxivapi/http/lockingcache"
 	"strconv"
+	"time"
 )
 
 type HTTPApi struct {
 	*mux.Router
 	xivapi *ffxivapi.FFXIVAPI
+	lc     *lockingcache.LockingCache
 }
 
 func NewHTTPApi() *HTTPApi {
 	h := &HTTPApi{
 		Router: mux.NewRouter(),
 		xivapi: ffxivapi.New(),
+		lc:     lockingcache.New(),
 	}
 
+	h.lc.MaxEntries = 32
+
 	h.Handle("/", http.RedirectHandler("/doc/", http.StatusMovedPermanently))
-	h.HandleFunc("/character/search", h.search)
-	h.HandleFunc("/character/{id}", h.character)
-	h.HandleFunc("/character/{id}/avatar", h.characterAvatar)
+	h.HandleFunc("/character/search", h.lc.Cache(h.search, 1*time.Hour))
+	h.HandleFunc("/character/{id}", h.lc.Cache(h.character, 15*time.Minute))
+	h.HandleFunc("/character/{id}/avatar", h.lc.Cache(h.characterAvatar, 30*time.Minute))
 
 	h.Handle("/swagger.yaml", http.FileServer(http.Dir("http")))
 	h.PathPrefix("/doc").Handler(httpSwagger.Handler(httpSwagger.URL("/swagger.yaml")))
