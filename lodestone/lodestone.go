@@ -1,4 +1,4 @@
-package ffxivapi
+package lodestone
 
 import (
 	"fmt"
@@ -9,26 +9,26 @@ import (
 	"time"
 )
 
-// LodestoneClient is an object capable of returning HTML from the Lodestone
-type LodestoneClient interface {
+// Client is an object capable of returning HTML from the Lodestone
+type Client interface {
 	// Requests returns an io.ReaderCloser from which the HTML response associated to the given query can be read
 	Request(query string) (io.ReadCloser, error)
 }
 
-// LodestoneHTTPError is a non-200 status code from the lodestone server implemented as error
-type LodestoneHTTPError int
+// HTTPError is a non-200 status code from the lodestone server implemented as error
+type HTTPError int
 
-func (lhe LodestoneHTTPError) Error() string {
+func (lhe HTTPError) Error() string {
 	return fmt.Sprintf("lodestone returned status %d %s", lhe, http.StatusText(int(lhe)))
 }
 
-// HTTPLoadestoneProvider uses an http.Client to connecto to the Lodestone and retrieve data
-type LodestoneHTTPClient struct {
+// HTTPClient uses an http.Client to connec to to the Lodestone and retrieve data
+type HTTPClient struct {
 	Region     string
 	HTTPClient *http.Client
 }
 
-func (hlp *LodestoneHTTPClient) Request(query string) (io.ReadCloser, error) {
+func (hlp *HTTPClient) Request(query string) (io.ReadCloser, error) {
 	u := "https://" + hlp.Region + ".finalfantasyxiv.com" + query
 
 	request, err := http.NewRequest(http.MethodGet, u, nil)
@@ -60,7 +60,7 @@ func (hlp *LodestoneHTTPClient) Request(query string) (io.ReadCloser, error) {
 
 		// Out of retires or other non-ok status, return error
 		if response.StatusCode != http.StatusOK {
-			return nil, LodestoneHTTPError(response.StatusCode)
+			return nil, HTTPError(response.StatusCode)
 		}
 
 		break

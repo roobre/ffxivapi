@@ -7,6 +7,7 @@ import (
 	"github.com/swaggo/http-swagger"
 	"net/http"
 	"roob.re/ffxivapi"
+	"roob.re/ffxivapi/lodestone"
 	"strconv"
 )
 
@@ -74,7 +75,7 @@ func (h *HTTPApi) character(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	character, err := h.xivapi.Character(id, features)
-	var herr ffxivapi.LodestoneHTTPError
+	var herr lodestone.HTTPError
 	if errors.As(err, &herr) && herr == http.StatusNotFound {
 		rw.WriteHeader(http.StatusNotFound)
 		return
@@ -99,7 +100,7 @@ func (h *HTTPApi) characterAvatar(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	character, err := h.xivapi.Character(id, 0)
-	var herr ffxivapi.LodestoneHTTPError
+	var herr lodestone.HTTPError
 	if errors.As(err, &herr) && herr == http.StatusNotFound {
 		rw.WriteHeader(http.StatusNotFound)
 		return

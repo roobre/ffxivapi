@@ -4,21 +4,33 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
 	"net/url"
+	"roob.re/ffxivapi/lodestone"
+	"roob.re/tcache"
+	"roob.re/tcache/mapcache"
 	"strconv"
+	"time"
 )
 
 // FFXIVAPI is the main object, containing the region to be targeted and the HTTP client to use
 type FFXIVAPI struct {
-	Lodestone LodestoneClient
+	Lodestone lodestone.Client
+	cache     tcache.Cache
 }
 
 // New returns a new FFXIVAPI object with http.DefaultClient and the region set to Europe ("eu")
 func New() *FFXIVAPI {
 	return &FFXIVAPI{
-		&LodestoneHTTPClient{
-			Region:     "eu",
-			HTTPClient: http.DefaultClient,
+		Lodestone: &lodestone.HTTPClient{
+			Region: "eu",
+			HTTPClient: &http.Client{
+				Transport: &lodestone.TCacheRoundTripper{
+					RoundTripper: http.DefaultTransport,
+					Cache:        mapcache.New(),
+					MaxAge:       15 * time.Minute,
+				},
+			},
 		},
+		cache: mapcache.New(),
 	}
 }
 
