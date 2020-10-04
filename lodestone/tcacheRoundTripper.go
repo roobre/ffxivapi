@@ -3,9 +3,10 @@ package lodestone
 import (
 	"bufio"
 	"bytes"
+	"fmt"
+	"github.com/fatih/color"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"roob.re/tcache"
 	"time"
@@ -17,24 +18,24 @@ type TCacheRoundTripper struct {
 	MaxAge       time.Duration
 }
 
-func (trt *TCacheRoundTripper) RoundTrip(r *http.Request) (response *http.Response, err error) {
-	if r.Method != http.MethodGet {
-		return trt.roundTrip(r)
+func (trt *TCacheRoundTripper) RoundTrip(rq *http.Request) (response *http.Response, err error) {
+	if rq.Method != http.MethodGet {
+		return trt.roundTrip(rq)
 	}
 
-	k := r.URL.RequestURI()
+	uri := rq.URL.RequestURI()
 
-	err = trt.Cache.From(r.Host).Access(k, trt.MaxAge, tcache.Handler{
+	err = trt.Cache.From(rq.Host).Access(uri, trt.MaxAge, tcache.Handler{
 		Then: func(r io.Reader) error {
-			log.Println("cache hit for " + k)
+			fmt.Printf("uri=\"%s\" cache=\"%s\"\n", color.CyanString(uri), color.GreenString("hit"))
 
 			response, err = http.ReadResponse(bufio.NewReader(r), nil)
 			return err
 		},
 		Else: func(w io.Writer) error {
-			log.Println("cache miss for " + k)
+			fmt.Printf("uri=\"%s\" cache=\"%s\"\n", color.CyanString(uri), color.YellowString("miss"))
 
-			response, err = trt.roundTrip(r)
+			response, err = trt.roundTrip(rq)
 			if err != nil {
 				return err
 			}
