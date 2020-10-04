@@ -8,16 +8,34 @@ FFXIVAPI is aggresive and heavily parallelizes requests to the Lodestone when po
 curl localhost:8080/character/31688528\?achievements\=yes  0.03s user 0.00s system 0% cpu 4.998 total
 ```
 
+Additionally, FFXIVAPI features an in-memory caching service to prevent multiple requests to spam heavily the Lodestone, which would not only be unpolite, but also increase the chance of getting 429'd and consequently increasing latency as well. Caching has mechanism has been engineered specifically for the long-latency lodestone requests.
+
 API documentation is available as a [Swagger spec](https://github.com/roobre/ffxivapi/blob/master/http/swagger.yaml) and is made available through the API itself in the root (`/`) path (assuming the binary is executed in the root source directory.
+
+If you'd like to see more endpoints, feel free to drop a PR or a feature request issue.
+
 
 ## Features
 
 Currently supported endpoints are:
 
-* [x] `/character/search`: Search for characters given their name and world
-* [x] `/character/{id}`: Retrieve character data, including achievements
-* [x] `/character/{id}/avatar`: Hotlink character avatar given its ID
+#### `/character/search`: Search for characters given their name and world
+```json
+[
+  {
+    "ID": 31688528,
+    "Level": 63,
+    "Avatar": "https://img2.finalfantasyxiv.com/f/7eb4d62ddd701b2fc5cc06fc773187e9_40d57ba713628f3f1ef5ef204b6d76d2fc0_96x96.jpg?1601561213",
+    "Lang": "EN",
+    "Name": "Roobre Shiram",
+    "World": "Ragnarok (Chaos)"
+  }
+]
+```
 
+Search results are cached for 1 hour.
+
+#### `/character/{id}`: Retrieve character data, including achievements
 ```json
 {
   "ParsedAt": "2020-09-28T14:21:56.403712609Z",
@@ -60,4 +78,10 @@ Currently supported endpoints are:
 }
 ```
 
-If you'd like to see more endpoints, feel free to drop a PR or a feature request issue.
+Character data (including achievements) are cached for 15 minutes.
+
+#### `/character/{id}/avatar`: Hotlink character avatar given its ID
+
+![Avatar](https://ffxivapi.herokuapp.com/character/31688528/avatar)
+
+Avatar redirections are cached for 30 minutes.
