@@ -14,7 +14,7 @@ import (
 
 type TCacheRoundTripper struct {
 	RoundTripper http.RoundTripper
-	Cache        tcache.Cache
+	Cache        *tcache.Cache
 	MaxAge       time.Duration
 }
 
@@ -23,17 +23,17 @@ func (trt *TCacheRoundTripper) RoundTrip(rq *http.Request) (response *http.Respo
 		return trt.roundTrip(rq)
 	}
 
-	uri := rq.URL.RequestURI()
+	url := rq.URL.String()
 
-	err = trt.Cache.From(rq.Host).Access(uri, trt.MaxAge, tcache.Handler{
+	err = trt.Cache.Access(url, trt.MaxAge, tcache.Handler{
 		Then: func(r io.Reader) error {
-			fmt.Printf("uri=\"%s\" cache=\"%s\"\n", color.CyanString(uri), color.GreenString("hit"))
+			fmt.Printf("url=\"%s\" cache=\"%s\"\n", color.CyanString(url), color.GreenString("hit"))
 
 			response, err = http.ReadResponse(bufio.NewReader(r), nil)
 			return err
 		},
 		Else: func(w io.Writer) error {
-			fmt.Printf("uri=\"%s\" cache=\"%s\"\n", color.CyanString(uri), color.YellowString("miss"))
+			fmt.Printf("url=\"%s\" cache=\"%s\"\n", color.CyanString(url), color.YellowString("miss"))
 
 			response, err = trt.roundTrip(rq)
 			if err != nil {

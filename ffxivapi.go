@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"roob.re/ffxivapi/lodestone"
 	"roob.re/tcache"
-	"roob.re/tcache/mapcache"
 	"strconv"
 	"time"
 )
@@ -14,7 +13,6 @@ import (
 // FFXIVAPI is the main object, containing the region to be targeted and the HTTP client to use
 type FFXIVAPI struct {
 	Lodestone lodestone.Client
-	cache     tcache.Cache
 }
 
 // New returns a new FFXIVAPI object with http.DefaultClient and the region set to Europe ("eu")
@@ -25,12 +23,11 @@ func New() *FFXIVAPI {
 			HTTPClient: &http.Client{
 				Transport: &lodestone.TCacheRoundTripper{
 					RoundTripper: http.DefaultTransport,
-					Cache:        mapcache.New(),
+					Cache:        tcache.New(tcache.NewMemStorage()),
 					MaxAge:       15 * time.Minute,
 				},
 			},
 		},
-		cache: mapcache.New(),
 	}
 }
 
