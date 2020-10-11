@@ -51,28 +51,44 @@ func (hlp *HTTPClient) Request(query string) (io.ReadCloser, error) {
 			return nil, err
 		}
 
-		// If TooManyRequests and retries left, sleep then continue
-		if response.StatusCode == http.StatusTooManyRequests {
-			elapsed := time.Since(start)
-			if elapsed < LodestoneHTTPTimeout {
-				// Linear backoff, wait between n and n+3 seconds where n is the attempt number
-				retry := time.Duration(1+rand.Intn(try+2)) * time.Second
-				log.Printf("Lodestone ratelimit hit, retrying in %fs", retry.Seconds())
-				time.Sleep(retry)
-				try++
-				continue
-			} else {
-				log.Printf("%.0fs passed since first attempt, giving up", elapsed.Seconds())
-			}
+		// Everything went ok, break retry loop
+		if response.StatusCode == http.StatusOK {
+			break
 		}
 
-		// Timeout or other non-ok status, return error
-		if response.StatusCode != http.StatusOK {
+		// Return error if status code is not retry-able
+		if !shouldRetry(response.StatusCode) || time.Since(start) > LodestoneHTTPTimeout {
 			return nil, HTTPError(response.StatusCode)
 		}
 
-		break
+		// Linear backoff, wait between n and n+3 seconds where n is the attempt number
+		wait := time.Second * time.Duration(retryMultiplier(response.StatusCode)*float64(1+rand.Intn(try+2)))
+		log.Printf("Lodestone replied with %d, retrying in %fs", response.StatusCode, wait.Seconds())
+		time.Sleep(wait)
+		try++
 	}
 
 	return response.Body, nil
+}
+
+// shouldRetry returns whether the non-200 status code is considered transient, and therefore the request should be retried
+func shouldRetry(statusCode int) bool {
+	switch statusCode {
+	case http.StatusTooManyRequests, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		return true
+	default:
+		return false
+	}
+}
+
+// retryMultiplier returns a factor for the naive linear backoff algorithm
+func retryMultiplier(statusCode int) float64 {
+	switch statusCode {
+	case http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		return 2
+	case http.StatusBadGateway:
+		return 3
+	default:
+		return 1
+	}
 }
