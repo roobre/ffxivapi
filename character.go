@@ -124,6 +124,8 @@ func (api *FFXIVAPI) parseClassJob(c *Character, wg *sync.WaitGroup) error {
 	return nil
 }
 
+var achPageRegex = regexp.MustCompile(`\?page=(\d+)`)
+
 func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
@@ -139,7 +141,11 @@ func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 		return errors.New(fmt.Sprintf("could not find achievements for %d", c.ID))
 	}
 
-	lp := silentAtoi(lastPageUrl[len(lastPageUrl)-1:])
+	lastPage := 0
+	matches := achPageRegex.FindStringSubmatch(lastPageUrl)
+	if len(matches) >= 2 {
+		lastPage = silentAtoi(matches[1])
+	}
 
 	achvChan := make(chan []Achievement, 8)
 	errChan := make(chan error, 8)
@@ -150,7 +156,7 @@ func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 	}()
 
 	// For next pages, if any, parse asyncrhonously as well
-	for p := 2; p <= lp; p++ {
+	for p := 2; p <= lastPage; p++ {
 		page := p
 		go func() {
 			doc, err := api.lodestone(fmt.Sprintf("/lodestone/character/%d/achievement", c.ID), map[string]string{
@@ -165,7 +171,7 @@ func (api *FFXIVAPI) parseAchievements(c *Character, wg *sync.WaitGroup) error {
 	}
 
 	// Collect updates from each page and append them to the character's achievement list
-	for p := 1; p <= lp; p++ {
+	for p := 1; p <= lastPage; p++ {
 		select {
 		case advs := <-achvChan:
 			c.Achievements = append(c.Achievements, advs...)
