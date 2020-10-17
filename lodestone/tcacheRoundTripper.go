@@ -3,6 +3,7 @@ package lodestone
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/fatih/color"
 	"io"
@@ -11,6 +12,8 @@ import (
 	"roob.re/tcache"
 	"time"
 )
+
+var errResponseNotOk = errors.New("not caching response as status code is >= 400")
 
 type TCacheRoundTripper struct {
 	RoundTripper http.RoundTripper
@@ -40,6 +43,11 @@ func (trt *TCacheRoundTripper) RoundTrip(rq *http.Request) (response *http.Respo
 				return err
 			}
 
+			// Do not cache errored responses
+			if response.StatusCode >= 400 {
+				return errResponseNotOk
+			}
+
 			newBody := &bytes.Buffer{}
 			origBody := response.Body
 			response.Body = ioutil.NopCloser(io.TeeReader(origBody, newBody))
@@ -50,6 +58,9 @@ func (trt *TCacheRoundTripper) RoundTrip(rq *http.Request) (response *http.Respo
 		},
 	})
 
+	if err == errResponseNotOk {
+		return response, nil
+	}
 	return response, err
 }
 
