@@ -11,15 +11,19 @@ import (
 	"strconv"
 )
 
-type HTTPApi struct {
+type Api struct {
 	*mux.Router
 	xivapi *ffxivapi.FFXIVAPI
 }
 
-func NewHTTPApi() *HTTPApi {
-	h := &HTTPApi{
+func New() *Api {
+	return NewWithApi(ffxivapi.New())
+}
+
+func NewWithApi(api *ffxivapi.FFXIVAPI) *Api {
+	h := &Api{
 		Router: mux.NewRouter(),
-		xivapi: ffxivapi.New(),
+		xivapi: api,
 	}
 
 	h.Handle("/", http.RedirectHandler("/doc/", http.StatusMovedPermanently))
@@ -33,7 +37,7 @@ func NewHTTPApi() *HTTPApi {
 	return h
 }
 
-func (h *HTTPApi) search(rw http.ResponseWriter, r *http.Request) {
+func (h *Api) search(rw http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	world := r.FormValue("world")
 	if name == "" || world == "" {
@@ -58,7 +62,7 @@ func (h *HTTPApi) search(rw http.ResponseWriter, r *http.Request) {
 	je.Encode(results)
 }
 
-func (h *HTTPApi) character(rw http.ResponseWriter, r *http.Request) {
+func (h *Api) character(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -91,7 +95,7 @@ func (h *HTTPApi) character(rw http.ResponseWriter, r *http.Request) {
 	je.Encode(character)
 }
 
-func (h *HTTPApi) characterAvatar(rw http.ResponseWriter, r *http.Request) {
+func (h *Api) characterAvatar(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
