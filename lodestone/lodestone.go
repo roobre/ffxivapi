@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -24,14 +25,18 @@ func (lhe HTTPError) Error() string {
 
 const LodestoneHTTPTimeout = 20 * time.Second
 
+func CanonServerFromRegion(region string) string {
+	return "https://" + region + ".finalfantasyxiv.com"
+}
+
 // HTTPClient uses an http.Client to connec to to the Lodestone and retrieve data
 type HTTPClient struct {
-	Region     string
+	Server     string
 	HTTPClient *http.Client
 }
 
 func (hlp *HTTPClient) Request(query string) (io.ReadCloser, error) {
-	u := "https://" + hlp.Region + ".finalfantasyxiv.com" + query
+	u := strings.TrimSuffix(hlp.Server, "/") + "/" + strings.TrimPrefix(query, "/")
 
 	request, err := http.NewRequest(http.MethodGet, u, nil)
 	if err != nil {

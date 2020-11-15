@@ -17,7 +17,7 @@ type FFXIVAPI struct {
 func New() *FFXIVAPI {
 	return &FFXIVAPI{
 		Lodestone: &lodestone.HTTPClient{
-			Region:     "eu",
+			Server:     lodestone.CanonServerFromRegion("eu"),
 			HTTPClient: http.DefaultClient,
 		},
 	}

@@ -10,6 +10,7 @@ import (
 	ffxivapihttp "roob.re/ffxivapi/http"
 	"roob.re/ffxivapi/lodestone"
 	"roob.re/tcache"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -28,20 +29,31 @@ func main() {
 		region = envRegion
 	}
 
-	api := ffxivapi.New()
+	server := lodestone.CanonServerFromRegion(region)
+	if envServer := os.Getenv("FFXIVAPI_SERVER"); envServer != "" {
+		if !strings.HasPrefix(envServer, "http") {
+			log.Fatal("FFXIVAPI_SERVER must start with http")
+		}
+
+		server = envServer
+	}
 
 	// If FFXIVAPI_NOCACHE does not exist (== "")
+	var client = http.DefaultClient
 	if os.Getenv("FFXIVAPI_NOCACHE") == "" {
-		api.Lodestone = &lodestone.HTTPClient{
-			Region: region,
-			HTTPClient: &http.Client{
-				Transport: &lodestone.TCacheRoundTripper{
-					RoundTripper: http.DefaultTransport,
-					Cache:        tcache.New(tcache.NewMemStorage()),
-					MaxAge:       15 * time.Minute,
-				},
+		client = &http.Client{
+			Transport: &lodestone.TCacheRoundTripper{
+				RoundTripper: http.DefaultTransport,
+				Cache:        tcache.New(tcache.NewMemStorage()),
+				MaxAge:       15 * time.Minute,
 			},
 		}
+	}
+
+	api := ffxivapi.New()
+	api.Lodestone = &lodestone.HTTPClient{
+		Server:     server,
+		HTTPClient: client,
 	}
 
 	h := ffxivapihttp.NewWithApi(api)
