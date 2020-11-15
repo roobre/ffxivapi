@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 	"github.com/swaggo/http-swagger"
 	"net/http"
 	"roob.re/ffxivapi"
@@ -26,6 +27,7 @@ func NewWithApi(api *ffxivapi.FFXIVAPI) *Api {
 		xivapi: api,
 	}
 
+	h.Use(logRequest)
 	h.Handle("/", http.RedirectHandler("/doc/", http.StatusMovedPermanently))
 	h.HandleFunc("/character/search", h.search)
 	h.HandleFunc("/character/{id}", h.character)
@@ -115,4 +117,11 @@ func (h *Api) characterAvatar(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(rw, r, character.Avatar, http.StatusFound)
+}
+
+func logRequest(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		log.Info(request.RequestURI)
+		handler.ServeHTTP(writer, request)
+	})
 }

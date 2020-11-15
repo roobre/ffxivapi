@@ -2,6 +2,7 @@ package ffxivapi // import "roob.re/ffxivapi"
 
 import (
 	"github.com/PuerkitoBio/goquery"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"roob.re/ffxivapi/lodestone"
@@ -34,6 +35,7 @@ func (api *FFXIVAPI) lodestone(query string, params map[string]string) (*goquery
 		query += urlValues.Encode()
 	}
 
+	log.Debugf("lodestone: requesting %s", query)
 	response, err := api.Lodestone.Request(query)
 	if err != nil {
 		return nil, err

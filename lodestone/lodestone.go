@@ -2,8 +2,8 @@ package lodestone
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -68,7 +68,7 @@ func (hlp *HTTPClient) Request(query string) (io.ReadCloser, error) {
 
 		// Linear backoff, wait between n and n+3 seconds where n is the attempt number
 		wait := time.Second * time.Duration(retryMultiplier(response.StatusCode)*float64(1+rand.Intn(try+2)))
-		log.Printf("Lodestone replied with %d, retrying in %fs", response.StatusCode, wait.Seconds())
+		log.Warnf("Lodestone replied with %d, retrying in %fs", response.StatusCode, wait.Seconds())
 		time.Sleep(wait)
 		try++
 	}

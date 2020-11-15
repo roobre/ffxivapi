@@ -4,12 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
-	"github.com/fatih/color"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"roob.re/tcache"
 	"time"
 )
@@ -36,13 +34,12 @@ func (trt *TCacheRoundTripper) RoundTrip(rq *http.Request) (response *http.Respo
 
 	err = trt.Cache.Access(url, trt.MaxAge, tcache.Handler{
 		Then: func(r io.Reader) error {
-			fmt.Fprint(os.Stderr, color.GreenString("hit ")+" "+color.CyanString(logpath)+"\n")
-
+			log.Debug("hit " + logpath)
 			response, err = http.ReadResponse(bufio.NewReader(r), nil)
 			return err
 		},
 		Else: func(w io.Writer) error {
-			fmt.Fprint(os.Stderr, color.YellowString("miss")+" "+color.CyanString(logpath)+"\n")
+			log.Debug("miss " + logpath)
 
 			response, err = trt.roundTrip(rq)
 			if err != nil {

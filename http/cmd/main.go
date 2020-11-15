@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
@@ -24,10 +24,17 @@ func main() {
 		addr = ":" + port
 	}
 
+	loglvl := log.InfoLevel
+	if envLevel := os.Getenv("FFXIVAPI_LOGLVL"); envLevel != "" {
+		loglvl, _ = log.ParseLevel(envLevel)
+	}
+	log.SetLevel(loglvl)
+
 	region := "eu"
 	if envRegion := os.Getenv("FFXIVAPI_REGION"); envRegion != "" {
 		region = envRegion
 	}
+	log.Infof("Using region %s", region)
 
 	server := lodestone.CanonServerFromRegion(region)
 	if envServer := os.Getenv("FFXIVAPI_SERVER"); envServer != "" {
@@ -37,10 +44,13 @@ func main() {
 
 		server = envServer
 	}
+	log.Infof("Using lodestone server %s", server)
 
 	// If FFXIVAPI_NOCACHE does not exist (== "")
 	var client = http.DefaultClient
 	if os.Getenv("FFXIVAPI_NOCACHE") == "" {
+		log.Info("Using tcache-based caching client")
+
 		client = &http.Client{
 			Transport: &lodestone.TCacheRoundTripper{
 				RoundTripper: http.DefaultTransport,
