@@ -6,8 +6,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"roob.re/ffxivapi"
 	ffxivapihttp "roob.re/ffxivapi/http"
+	"roob.re/ffxivapi/lodestone"
+	"roob.re/tcache"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -19,7 +23,29 @@ func main() {
 		addr = ":" + port
 	}
 
-	h := ffxivapihttp.NewHTTPApi()
+	region := "eu"
+	if envRegion := os.Getenv("FFXIVAPI_REGION"); envRegion != "" {
+		region = envRegion
+	}
+
+	api := ffxivapi.New()
+
+	// If FFXIVAPI_NOCACHE does not exist (== "")
+	if os.Getenv("FFXIVAPI_NOCACHE") == "" {
+		api.Lodestone = &lodestone.HTTPClient{
+			Region: region,
+			HTTPClient: &http.Client{
+				Transport: &lodestone.TCacheRoundTripper{
+					RoundTripper: http.DefaultTransport,
+					Cache:        tcache.New(tcache.NewMemStorage()),
+					MaxAge:       15 * time.Minute,
+				},
+			},
+		}
+	}
+
+	h := ffxivapihttp.NewWithApi(api)
+
 	s := &http.Server{
 		Addr:    addr,
 		Handler: h,
