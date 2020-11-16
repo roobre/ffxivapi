@@ -14,6 +14,22 @@ API documentation is available as a [Swagger spec](https://github.com/roobre/ffx
 
 If you'd like to see more endpoints, feel free to drop a PR or a feature request issue.
 
+## Configuration
+
+Minimal configuration is possible with environment variables:
+
+* **`PORT`**: The port to which the HTTP server will bind itself into
+  - Additionally, it is possible to configure the full address by passing an address string (e.g. `10.0.0.100:8088`) as the argument to the binary. `PORT` has priority over the address specified this way.
+* **``FFXIVAPI_LOGLVL``**: Log level, as defined in [logrus](https://github.com/sirupsen/logrus/blob/v1.7.0/logrus.go#L25)
+* **`FFXIVAPI_REGION`**: Lodestone region to query. Should be `eu`, `na`, or `jp`
+* **`FFXIVAPI_SERVER`**: Custom HTTP server to query, instead of the lodestone (`eu.finalfantasyxiv.com`). Useful to proxy/cache the lodestone server externally.
+* **`FFXIVAPI_NOCACHE`**: Disable ffxivapi's internal caching mechanism ([tcache](https://github.com/roobre/tcache)). Useful if using an external `FFXIVAPI_SERVER` which already performs caching
+
+## Deployment
+
+A Dockerfile and an [alpine-based docker image](https://hub.docker.com/r/roobre/ffxivapi) are provided for easy deployment.
+
+Additionally, a kubernetes yaml can also be found on the root of this repo.
 
 ## Features
 
@@ -32,8 +48,6 @@ Currently supported endpoints are:
   }
 ]
 ```
-
-Search results are cached for 1 hour.
 
 #### `/character/{id}`: Retrieve character data, including achievements
 ```json
@@ -65,7 +79,7 @@ Search results are cached for 1 hour.
       "Name": "Mapping the Realm: Sohm Al",
       "Obtained": "2020-09-27T22:16:53Z"
     },
-    "// Truncated for readability",
+    "// Truncated for readability"
   ],
   "ClassJobs": [
     {
@@ -77,8 +91,6 @@ Search results are cached for 1 hour.
   ]
 }
 ```
-
-Character data (including achievements) are cached for 15 minutes.
 
 #### `/character/{id}/avatar`: Hotlink character avatar given its ID
 
