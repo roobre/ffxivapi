@@ -1,9 +1,15 @@
 DOCKER_TAG ?= "roobre/ffxivapi:latest"
+bin := ffxivapi
 
-ffixvapi:
-	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o ffxivapi ./http/cmd
+ffixvapi: go.mod go.sum
+	go mod download
+	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o ${bin} ./http/cmd
+	chmod +rx ffxivapi
 
 docker:
 	docker build -t ${DOCKER_TAG} .
 
-.PHONY: docker
+clean:
+	rm ${bin}
+
+.PHONY: docker clean
