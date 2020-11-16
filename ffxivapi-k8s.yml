@@ -1,0 +1,156 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: management
+  name: ffxivapi
+spec:
+  rules:
+    - host: ffxivapi.roobre.es
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ffxivapi-back
+                port:
+                  name: back-http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ffxivapi-back
+spec:
+  type: ClusterIP
+  ports:
+    - name: ffxivapi-back-http
+      port: 8080
+      targetPort: back-http
+  selector:
+    app: ffxivapi-back
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ffxivapi-back
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ffxivapi-back
+  template:
+    metadata:
+      labels:
+        app: ffxivapi-back
+    spec:
+      containers:
+        - name: ffxivapi
+          image: roobre/ffxivapi:latest
+          imagePullPolicy: Always
+          ports:
+            - name: back-http
+              containerPort: 8080
+          env:
+            - name: FFXIVAPI_NOCACHE
+              value: hellYeahCommaIDontWannaCacheShit
+            - name: FFXIVAPI_SERVER
+              value: http://ffxivapi-lodestoneproxy
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - localhost:8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 2
+            periodSeconds: 60
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ffxivapi-lodestoneproxy
+spec:
+  type: ClusterIP
+  ports:
+    - name: proxy-http
+      port: 80
+      targetPort: proxy-http
+  selector:
+    app: ffxivapi-lodestoneproxy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ffxivapi-lodestoneproxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ffxivapi-lodestoneproxy
+  template:
+    metadata:
+      labels:
+        app: ffxivapi-lodestoneproxy
+    spec:
+      containers:
+        - name: ffxivapi-lodestoneproxy
+          image: nginx:latest
+          ports:
+            - name: proxy-http
+              containerPort: 80
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          livenessProbe:
+            httpGet:
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 10
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: ffxivapi-lodestoneproxy-nginxconf
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ffxivapi-lodestoneproxy-nginxconf
+data:
+  nginx.conf: |
+    worker_processes auto;
+
+    events {
+        worker_connections  1024;
+    }
+
+    http {
+        sendfile on;
+        root     /srv/http/;
+
+        proxy_cache_path /tmp/nginx  levels=1:2  keys_zone=NGINX:1M  inactive=72h  max_size=128M;
+
+        server {
+            listen       *:80;
+            server_name  ffxivapi-lodestoneproxy;
+
+            location / {
+                proxy_connect_timeout     20s;
+                proxy_cache_lock          on;
+                proxy_cache_lock_age      7s;
+                proxy_cache_lock_timeout  10s;
+                proxy_ignore_headers      Cache-Control Expires Set-Cookie;
+                proxy_pass                https://eu.finalfantasyxiv.com;
+                proxy_buffering           on;
+                proxy_cache               NGINX;
+                proxy_cache_valid         200 15m;
+                proxy_cache_valid         403 30m;
+                proxy_cache_valid         404 30m;
+                proxy_cache_valid         429 0s;
+                proxy_cache_valid         any 3m;
+                proxy_cache_use_stale     error timeout invalid_header updating
+                                          http_500 http_502 http_503 http_504;
+            }
+        }
+    }
