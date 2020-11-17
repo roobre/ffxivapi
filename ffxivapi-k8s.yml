@@ -45,7 +45,7 @@ spec:
         app: ffxivapi-back
     spec:
       containers:
-        - name: ffxivapi
+        - name: ffxivapi-back
           image: roobre/ffxivapi:latest
           imagePullPolicy: Always
           ports:
