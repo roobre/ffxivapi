@@ -2,7 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
-    kubernetes.io/ingress.class: management
+    kubernetes.io/ingress.class: roobre
+    cert-manager.io/cluster-issuer: letsencrypt-prod-roobre
   name: ffxivapi
 spec:
   rules:
@@ -16,6 +17,10 @@ spec:
                 name: ffxivapi-back
                 port:
                   name: back-http
+  tls:
+    - hosts:
+        - ffxivapi.roobre.es
+      secretName: ffxivapi-cert
 ---
 apiVersion: v1
 kind: Service
