@@ -15,4 +15,5 @@ RUN mkdir -p /app/http
 COPY --from=build /app/http/swagger.yaml /app/http
 COPY --from=build /app/ffxivapi /app
 
+WORKDIR /app
 CMD /app/ffxivapi
