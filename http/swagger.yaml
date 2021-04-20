@@ -7,8 +7,8 @@ info:
     email: "roobre@roobre.es"
   license:
     name: "AGPLv3"
-    url: "http://www.gnu.org/licenses/agpl-3.0.html"
-host: "ffxivapi.herokuapp.com"
+    url: "https://www.gnu.org/licenses/agpl-3.0.html"
+host: "ffxivapi.roobre.es"
 basePath: "/"
 tags:
 - name: "character"
