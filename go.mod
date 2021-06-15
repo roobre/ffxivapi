@@ -4,10 +4,9 @@ module roob.re/ffxivapi
 go 1.15
 
 require (
-	github.com/PuerkitoBio/goquery v1.6.1
+	github.com/PuerkitoBio/goquery v1.7.0
 	github.com/gorilla/mux v1.8.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/swaggo/gin-swagger v1.2.0 // indirect
 	github.com/swaggo/http-swagger v1.0.0
 	roob.re/tcache v0.1.1
 )
