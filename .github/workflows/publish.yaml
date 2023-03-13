@@ -1,0 +1,28 @@
+# Publish chart as OCI image to GitHub registry. Version is automatically gathered from the tag name.
+# For this workflow to work, GITHUB_TOKEN needs to be configured with write permissions.
+# Additionally, the repository must be granted access in the package settings.
+
+name: Build and publish image
+
+on:
+  release:
+    types: [ released ]
+
+jobs:
+  release:
+    name: Build and publish image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Docker build
+        run: |
+          docker build . \
+            -t ghcr.io/${{ github.repository }}:"$GITHUB_REF_NAME"
+      - name: Docker push
+        run: |
+          docker push ghcr.io/${{ github.repository }}:"$GITHUB_REF_NAME"
