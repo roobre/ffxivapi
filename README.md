@@ -94,6 +94,6 @@ Currently supported endpoints are:
 
 #### `/character/{id}/avatar`: Hotlink character avatar given its ID
 
-![Avatar](https://ffxivapi.herokuapp.com/character/31688528/avatar)
+![Avatar](https://ffxivapi.roobre.es/character/31688528/avatar)
 
 Avatar redirections are cached for 30 minutes.
